@@ -19,7 +19,7 @@ impl Plugin for GamePlugin {
             )
             .add_systems(
                 OnEnter(GameState::Starting),
-                ((spawn_players, spawn_deck, spawn_cards), goto_deal_phase).chain(),
+                (spawn_players, spawn_deck, apply_deferred, spawn_cards, goto_deal_phase).chain(),
             );
     }
 }

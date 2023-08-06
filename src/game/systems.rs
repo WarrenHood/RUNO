@@ -54,8 +54,12 @@ pub fn despawn_cards(mut commands: Commands, cards_query: Query<Entity, With<car
     }
 }
 
-pub fn spawn_cards(mut commands: Commands) {
+pub fn spawn_cards(mut commands: Commands, deck_query: Query<Entity, With<Deck>>) {
     println!("Spawning cards into deck");
+    // We will only ever try to spawn cards after spawning in the deck
+    let decks = deck_query.iter();
+    println!("Detected {} decks", decks.count());
+    let deck = deck_query.get_single().unwrap();
     // Add color cards
     for pack in 0..2 {
         for color in cards::COLORS.iter() {
@@ -63,51 +67,58 @@ pub fn spawn_cards(mut commands: Commands) {
                 if rank == 0 && pack == 1 {
                     continue;
                 }
-                commands.spawn((
-                    cards::InDeck,
-                    cards::ColorCardNumberBundle::new(*color, rank),
-                ));
+                commands
+                    .spawn((
+                        cards::ColorCardNumberBundle::new(*color, rank),
+                    ))
+                    .set_parent(deck);
             }
             // Add action cards
             // Skip
-            commands.spawn((
-                cards::InDeck,
-                Name::new(format!("{:?} Skip", color)),
-                cards::Skip(1),
-                cards::DelayDraw,
-                *color,
-            ));
+            commands
+                .spawn((
+                    Name::new(format!("{:?} Skip", color)),
+                    cards::Skip(1),
+                    cards::DelayDraw,
+                    *color,
+                ))
+                .set_parent(deck);
             // Draw2
-            commands.spawn((
-                cards::InDeck,
-                Name::new(format!("{:?} Draw 2", color)),
-                cards::Draw(2),
-                cards::DelayDraw,
-                *color,
-            ));
+            commands
+                .spawn((
+                    Name::new(format!("{:?} Draw 2", color)),
+                    cards::Draw(2),
+                    cards::DelayDraw,
+                    *color,
+                ))
+                .set_parent(deck);
             // Reverse
-            commands.spawn((
-                cards::InDeck,
-                Name::new(format!("{:?} Reverse", color)),
-                cards::Reverse,
-                cards::DelayDraw,
-                *color,
-            ));
+            commands
+                .spawn((
+                    Name::new(format!("{:?} Reverse", color)),
+                    cards::Reverse,
+                    cards::DelayDraw,
+                    *color,
+                ))
+                .set_parent(deck);
         }
     }
 
     // Add 4 wilds and wild+draw4s
     for _ in 0..4 {
-        commands.spawn((cards::InDeck, cards::WildBundle::new()));
-        commands.spawn((
-            cards::InDeck,
-            cards::WildBundle {
-                name: Name::new("Wild Draw 4"),
-                delay_draw: cards::DelayDraw,
-                wild: cards::Wild,
-                card: cards::Card,
-            },
-            cards::Draw(4),
-        ));
+        commands
+            .spawn((cards::WildBundle::new()))
+            .set_parent(deck);
+        commands
+            .spawn((
+                cards::WildBundle {
+                    name: Name::new("Wild Draw 4"),
+                    delay_draw: cards::DelayDraw,
+                    wild: cards::Wild,
+                    card: cards::Card,
+                },
+                cards::Draw(4),
+            ))
+            .set_parent(deck);
     }
 }
