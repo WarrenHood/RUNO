@@ -101,7 +101,7 @@ pub fn spawn_cards(mut commands: Commands, deck_query: Query<Entity, With<Deck>>
 
     // Add 4 wilds and wild+draw4s
     for _ in 0..4 {
-        commands.spawn((cards::WildBundle::new())).set_parent(deck);
+        commands.spawn(cards::WildBundle::new()).set_parent(deck);
         commands
             .spawn((
                 cards::WildBundle {
