@@ -6,14 +6,11 @@ use bevy::prelude::*;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 
-pub fn start_game(mut next_game_state: ResMut<NextState<GameState>>) {
-    println!("Starting the game");
-    next_game_state.set(GameState::Starting);
-}
-
-pub fn goto_deal_phase(mut next_game_state: ResMut<NextState<GameState>>) {
-    println!("Going to deal phase");
-    next_game_state.set(GameState::Dealing);
+pub fn goto_phase(next_state: GameState) -> impl Fn(ResMut<NextState<GameState>>) {
+    move |mut next_game_state: ResMut<NextState<GameState>>| {
+        println!("Going to {:?} phase", next_state);
+        next_game_state.set(next_state);
+    }
 }
 
 pub fn spawn_players(mut commands: Commands, players: Res<PlayerCount>) {
@@ -33,7 +30,7 @@ pub fn spawn_players(mut commands: Commands, players: Res<PlayerCount>) {
 pub fn despawn_players(mut commands: Commands, players_query: Query<Entity, With<player::Player>>) {
     println!("Despawning players");
     for player_entity in players_query.iter() {
-        commands.entity(player_entity).despawn_recursive();
+        commands.entity(player_entity).despawn();
     }
 }
 
@@ -142,4 +139,8 @@ pub fn deal_cards(
             }
         }
     }
+}
+
+pub fn main_loop() {
+    println!("In main loop...")
 }

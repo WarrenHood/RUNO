@@ -14,7 +14,13 @@ impl Plugin for GamePlugin {
         app.add_state::<GameState>()
             .add_systems(
                 OnEnter(GameState::AwaitingStart),
-                (despawn_deck, despawn_players, despawn_cards, start_game).chain(),
+                (
+                    despawn_deck,
+                    despawn_players,
+                    despawn_cards,
+                    goto_phase(GameState::Starting),
+                )
+                    .chain(),
             )
             .add_systems(
                 OnEnter(GameState::Starting),
@@ -23,10 +29,14 @@ impl Plugin for GamePlugin {
                     spawn_deck,
                     apply_deferred,
                     spawn_cards,
-                    goto_deal_phase,
+                    goto_phase(GameState::Dealing),
                 )
                     .chain(),
             )
-            .add_systems(OnEnter(GameState::Dealing), deal_cards);
+            .add_systems(
+                OnEnter(GameState::Dealing),
+                (deal_cards, goto_phase(GameState::Playing)).chain(),
+            )
+            .add_systems(Update, main_loop.run_if(in_state(GameState::Playing)));
     }
 }
