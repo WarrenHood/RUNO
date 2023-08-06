@@ -142,5 +142,5 @@ pub fn deal_cards(
 }
 
 pub fn main_loop() {
-    println!("In main loop...")
+    // println!("In main loop...");
 }
