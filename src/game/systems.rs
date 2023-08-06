@@ -3,6 +3,8 @@ use super::PlayerCount;
 use crate::cards;
 use crate::player;
 use bevy::prelude::*;
+use rand::seq::SliceRandom;
+use rand::thread_rng;
 
 pub fn start_game(mut next_game_state: ResMut<NextState<GameState>>) {
     println!("Starting the game");
@@ -57,9 +59,7 @@ pub fn despawn_cards(mut commands: Commands, cards_query: Query<Entity, With<car
 pub fn spawn_cards(mut commands: Commands, deck_query: Query<Entity, With<Deck>>) {
     println!("Spawning cards into deck");
     // We will only ever try to spawn cards after spawning in the deck
-    let decks = deck_query.iter();
-    println!("Detected {} decks", decks.count());
-    let deck = deck_query.get_single().unwrap();
+    let deck = deck_query.single();
     // Add color cards
     for pack in 0..2 {
         for color in cards::COLORS.iter() {
@@ -68,9 +68,7 @@ pub fn spawn_cards(mut commands: Commands, deck_query: Query<Entity, With<Deck>>
                     continue;
                 }
                 commands
-                    .spawn((
-                        cards::ColorCardNumberBundle::new(*color, rank),
-                    ))
+                    .spawn((cards::ColorCardNumberBundle::new(*color, rank),))
                     .set_parent(deck);
             }
             // Add action cards
@@ -106,9 +104,7 @@ pub fn spawn_cards(mut commands: Commands, deck_query: Query<Entity, With<Deck>>
 
     // Add 4 wilds and wild+draw4s
     for _ in 0..4 {
-        commands
-            .spawn((cards::WildBundle::new()))
-            .set_parent(deck);
+        commands.spawn((cards::WildBundle::new())).set_parent(deck);
         commands
             .spawn((
                 cards::WildBundle {
@@ -120,5 +116,30 @@ pub fn spawn_cards(mut commands: Commands, deck_query: Query<Entity, With<Deck>>
                 cards::Draw(4),
             ))
             .set_parent(deck);
+    }
+}
+
+pub fn deal_cards(
+    mut commands: Commands,
+    cards: Query<Entity, With<cards::Card>>,
+    players: Query<(Entity, &player::PlayerID), With<player::Player>>,
+    deck: Query<&Children, With<Deck>>,
+) {
+    let deck = deck.single();
+    let mut rng = thread_rng();
+    let mut available_cards: Vec<Entity> = deck
+        .iter()
+        .filter(|child| cards.contains(**child))
+        .map(|child| cards.get(*child).unwrap())
+        .collect();
+    available_cards.shuffle(&mut rng);
+    for (player_entity, player::PlayerID(player_id)) in players.iter() {
+        println!("Dealing cards to player {}", player_id);
+        for _ in 0..7 {
+            let card = available_cards.pop();
+            if let Some(card) = card {
+                commands.entity(card).set_parent(player_entity);
+            }
+        }
     }
 }

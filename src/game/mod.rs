@@ -5,7 +5,6 @@ use bevy::prelude::*;
 use components::*;
 use systems::*;
 
-
 #[derive(Resource)]
 pub struct PlayerCount(pub u8);
 
@@ -19,7 +18,15 @@ impl Plugin for GamePlugin {
             )
             .add_systems(
                 OnEnter(GameState::Starting),
-                (spawn_players, spawn_deck, apply_deferred, spawn_cards, goto_deal_phase).chain(),
-            );
+                (
+                    spawn_players,
+                    spawn_deck,
+                    apply_deferred,
+                    spawn_cards,
+                    goto_deal_phase,
+                )
+                    .chain(),
+            )
+            .add_systems(OnEnter(GameState::Dealing), deal_cards);
     }
 }
