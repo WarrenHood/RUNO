@@ -39,7 +39,7 @@ pub struct InDeck;
 
 #[derive(Bundle)]
 pub struct ColorCardNumberBundle {
-    pub name: CardName,
+    pub name: Name,
     pub color: Color,
     pub rank: Rank,
     pub card: Card
@@ -47,13 +47,13 @@ pub struct ColorCardNumberBundle {
 
 impl ColorCardNumberBundle {
     pub fn new(color: Color, rank: u8) -> Self {
-        Self { name: CardName(format!("{:?} {}", color, rank)), color, rank: Rank(rank), card: Card }
+        Self { name: Name::new(format!("{:?} {}", color, rank)), color, rank: Rank(rank), card: Card }
     }
 }
 
 #[derive(Bundle)]
 pub struct WildBundle {
-    pub name: CardName,
+    pub name: Name,
     pub delay_draw: DelayDraw,
     pub wild: Wild,
     pub card: Card
@@ -61,6 +61,6 @@ pub struct WildBundle {
 
 impl WildBundle {
     pub fn new() -> Self {
-        Self { name: CardName("Wild".into()), delay_draw: DelayDraw, wild: Wild, card: Card }
+        Self { name: Name::new("Wild"), delay_draw: DelayDraw, wild: Wild, card: Card }
     }
 }

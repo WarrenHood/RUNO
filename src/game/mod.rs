@@ -15,11 +15,11 @@ impl Plugin for GamePlugin {
         app.add_state::<GameState>()
             .add_systems(
                 OnEnter(GameState::AwaitingStart),
-                (clear_cards, start_game).chain(),
+                (despawn_deck, despawn_players, despawn_cards, start_game).chain(),
             )
             .add_systems(
                 OnEnter(GameState::Starting),
-                ((add_players, populate_deck), goto_deal_phase).chain(),
+                ((spawn_players, spawn_deck, spawn_cards), goto_deal_phase).chain(),
             );
     }
 }
