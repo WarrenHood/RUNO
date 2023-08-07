@@ -18,10 +18,10 @@ impl Plugin for GamePlugin {
                     despawn_deck,
                     despawn_players,
                     despawn_cards,
-                    goto_phase(GameState::Starting),
                 )
                     .chain(),
             )
+            .add_systems(Update, wait_for_players.run_if(in_state(GameState::AwaitingStart)))
             .add_systems(
                 OnEnter(GameState::Starting),
                 (

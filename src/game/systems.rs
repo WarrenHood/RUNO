@@ -1,8 +1,9 @@
 use super::components::*;
-use super::PlayerCount;
 use crate::cards;
+use crate::networking;
 use crate::player;
 use bevy::prelude::*;
+use bevy_renet::renet::RenetServer;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 
@@ -13,17 +14,27 @@ pub fn goto_phase(next_state: GameState) -> impl Fn(ResMut<NextState<GameState>>
     }
 }
 
-pub fn spawn_players(mut commands: Commands, players: Res<PlayerCount>) {
-    // I guess we can just spawn in one player for now
-    let num_players = players.0;
+/// Wait for at least 1 player to join for now...
+/// TODO: Implement a ready-up system later
+/// TODO: And probably spawn in some entities representing each client or something
+pub fn wait_for_players(
+    mut next_game_state: ResMut<NextState<GameState>>,
+    server: Res<RenetServer>,
+) {
+    if server.clients_id().iter().count() > 0 {
+        println!("Detected enough players to start the game");
+        goto_phase(GameState::Starting)(next_game_state);
+    }
+}
 
-    for i in 0..num_players {
+pub fn spawn_players(mut commands: Commands, server: Res<RenetServer>) {
+    for client_id in server.clients_id().iter() {
         commands.spawn((
             player::Player,
-            player::PlayerID(i),
-            Name::new(format!("Player {}", i)),
+            player::PlayerID(*client_id),
+            Name::new(format!("Player {}", *client_id)),
         ));
-        println!("Spawned player {}", i);
+        println!("Spawned player with id: {}", *client_id);
     }
 }
 
@@ -46,8 +57,13 @@ pub fn despawn_deck(mut commands: Commands, deck_query: Query<Entity, With<Deck>
     }
 }
 
-pub fn despawn_cards(mut commands: Commands, cards_query: Query<Entity, With<cards::Card>>) {
+pub fn despawn_cards(
+    mut commands: Commands,
+    cards_query: Query<Entity, With<cards::Card>>,
+    mut message_queue: ResMut<networking::server::MessageQueue>,
+) {
     println!("Despawning all cards");
+    message_queue.send_message(None, networking::GameMessage::ClearHand);
     for card_entity in cards_query.iter() {
         commands.entity(card_entity).despawn();
     }
@@ -118,24 +134,23 @@ pub fn spawn_cards(mut commands: Commands, deck_query: Query<Entity, With<Deck>>
 
 pub fn deal_cards(
     mut commands: Commands,
-    cards: Query<Entity, With<cards::Card>>,
+    cards: Query<(Entity, &Name), With<cards::Card>>,
     players: Query<(Entity, &player::PlayerID), With<player::Player>>,
-    deck: Query<&Children, With<Deck>>,
+    mut message_queue: ResMut<networking::server::MessageQueue>,
 ) {
-    let deck = deck.single();
     let mut rng = thread_rng();
-    let mut available_cards: Vec<Entity> = deck
-        .iter()
-        .filter(|child| cards.contains(**child))
-        .map(|child| cards.get(*child).unwrap())
-        .collect();
+    // When we deal cards, all the cards are going to be in the deck anyways, so it is safe to deal all available cards
+    let mut available_cards: Vec<(Entity, &Name)> = cards.iter().collect();
     available_cards.shuffle(&mut rng);
     for (player_entity, player::PlayerID(player_id)) in players.iter() {
         println!("Dealing cards to player {}", player_id);
         for _ in 0..7 {
-            let card = available_cards.pop();
-            if let Some(card) = card {
+            if let Some((card, card_name)) = available_cards.pop() {
                 commands.entity(card).set_parent(player_entity);
+                message_queue.send_message(
+                    Some(*player_id),
+                    networking::GameMessage::DrawCard(card_name.to_string()),
+                );
             }
         }
     }
