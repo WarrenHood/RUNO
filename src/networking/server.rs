@@ -15,7 +15,7 @@ impl Plugin for ServerPlugin {
         app.add_plugins(NetcodeServerPlugin);
 
         let server = RenetServer::new(ConnectionConfig::default());
-        let public_addr = "127.0.0.1:5000".parse().unwrap();
+        let public_addr = "0.0.0.0:5000".parse().unwrap();
         let socket = UdpSocket::bind(public_addr).unwrap();
         let server_config = ServerConfig {
             max_clients: 64,
